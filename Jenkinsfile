@@ -48,7 +48,7 @@ pipeline {
             steps {
                 echo "Deploying app"
                 sh '''
-                docker compose down || true
+                docker compose down &&
                 docker compose up -d
                 '''
             }
