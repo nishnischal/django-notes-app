@@ -1,29 +1,64 @@
-@Library('Shared')_
-pipeline{
-    agent { label 'dev-server'}
-    
-    stages{
-        stage("Code clone"){
-            steps{
-                sh "whoami"
-            clone("https://github.com/LondheShubham153/django-notes-app.git","main")
+@Library("shared") _
+pipeline {
+    agent { label "hamza" }
+
+    stages {
+        stage("Hello"){
+            steps{ 
+                script{
+                    hello()
+                }
             }
         }
-        stage("Code Build"){
-            steps{
-            dockerbuild("notes-app","latest")
+
+        stage("Clean Workspace") {
+            steps {
+                cleanWs()
             }
         }
-        stage("Push to DockerHub"){
-            steps{
-                dockerpush("dockerHubCreds","notes-app","latest")
+
+        stage("Code") {
+            steps {
+                echo "Cloning code"
+                git url: "https://github.com/nishnischal/django-notes-app.git", branch: "main"
             }
         }
-        stage("Deploy"){
-            steps{
-                deploy()
+
+        stage("Build") {
+            steps {
+                script{
+                    docker_build("notes-app","latest", "nischalojha")
+                }
             }
         }
-        
+        stage("Push to DockerHub") {
+                steps{
+                    script{
+                        docker_push("notes-app","latest","nischalojha")
+                    }
+                }
+                }
+        stage("Test") {
+            steps {
+                echo "Running tests"
+            }
+        }
+
+        stage("Deploy") {
+            steps {
+                echo "Deploying app"
+                sh '''
+                docker compose down || true
+                docker compose up -d
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning unused Docker resources"
+            sh "docker system prune -f"
+        }
     }
 }
