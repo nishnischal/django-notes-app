@@ -1,64 +1,58 @@
-@Library("shared") _
+@Library("Shared") _
+
 pipeline {
-    agent { label "hamza" }
+    agent { label "vinod" }
 
     stages {
-        stage("Hello"){
-            steps{ 
-                script{
+
+        stage('Hello') {
+            steps {
+                script {
                     hello()
                 }
             }
         }
 
-        stage("Clean Workspace") {
+        stage('Code') {
             steps {
-                cleanWs()
+                echo "Fetching code from GitHub..."
+
+                git branch: "main",
+                    url: "https://github.com/nishnischal/django-notes-app.git"
+
+                echo "Code cloning successful"
             }
         }
 
-        stage("Code") {
+        stage('Build') {
             steps {
-                echo "Cloning code"
-                git url: "https://github.com/nishnischal/django-notes-app.git", branch: "main"
+                echo "Building Docker image..."
+
+                sh "docker build -t notes-app:latest ."
             }
         }
 
-        stage("Build") {
+        stage('Test') {
             steps {
-                script{
-                    docker_build("notes-app","latest", "nischalojha")
-                }
-            }
-        }
-        stage("Push to DockerHub") {
-                steps{
-                    script{
-                        docker_push("notes-app","latest","nischalojha")
-                    }
-                }
-                }
-        stage("Test") {
-            steps {
-                echo "Running tests"
+                echo "Testing the application..."
+                // sh "python manage.py test"
             }
         }
 
-        stage("Deploy") {
+        stage('Push') {
             steps {
-                echo "Deploying app"
-                sh '''
-                docker compose down &&
-                docker compose up -d
-                '''
+               script {
+                  docker_push("notes-app","latest","nischalojha")
+              }
             }
         }
-    }
 
-    post {
-        always {
-            echo "Cleaning unused Docker resources"
-            sh "docker system prune -f"
+        stage('Deploy') {
+            steps {
+                echo "Deploying application..."
+                sh "docker compose up -d"
+                
+            }
         }
     }
 }
