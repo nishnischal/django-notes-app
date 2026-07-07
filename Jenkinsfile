@@ -15,35 +15,26 @@ pipeline {
 
         stage('Code') {
             steps {
-                echo "Fetching code from GitHub..."
-
-                git branch: "main",
-                    url: "https://github.com/nishnischal/django-notes-app.git"
-
-                echo "Code cloning successful"
+                script {
+                    clone("https://github.com/nishnischal/django-notes-app.git", "main")
+                    echo "Code cloning successful"
+                }
             }
         }
 
         stage('Build') {
             steps {
-                echo "Building Docker image..."
-
-                sh "docker build -t notes-app:latest ."
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "Testing the application..."
-                // sh "python manage.py test"
+                script {
+                    docker_build("notes-app", "latest", "nischalojha")
+                }
             }
         }
 
         stage('Push') {
             steps {
-               script {
-                  docker_push("notes-app","latest","nischalojha")
-              }
+                script {
+                    docker_push("notes-app", "latest", "nischalojha")
+                }
             }
         }
 
@@ -51,7 +42,6 @@ pipeline {
             steps {
                 echo "Deploying application..."
                 sh "docker compose up -d"
-                
             }
         }
     }
